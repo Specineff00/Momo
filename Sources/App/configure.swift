@@ -1,21 +1,45 @@
 import NIOSSL
 import Fluent
-import FluentSQLiteDriver
+import FluentMySQLDriver
 import Leaf
 import Vapor
 
+func readSecret(from path: String) -> String? {
+  do {
+    let secretData = try String(contentsOfFile: path)
+    return secretData.trimmingCharacters(in: .whitespacesAndNewlines)
+  } catch {
+    print("Error reading secret from \(path): \(error)")
+    return nil
+  }
+}
+
 // configures your application
 public func configure(_ app: Application) async throws {
-    // uncomment to serve files from /Public folder
-    // app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
+  print("HELLO HELLO")
+  var tls = TLSConfiguration.makeClientConfiguration()
+  tls.certificateVerification = .none
 
-    app.databases.use(DatabaseConfigurationFactory.sqlite(.file("db.sqlite")), as: .sqlite)
+  // Access the environment variables for the secret file paths
+  let dbUserFilePath = Environment.get("DATABASE_USER_FILE") ?? "/run/secrets/db_user"
+  let dbPasswordFilePath = Environment.get("DATABASE_PASSWORD_FILE") ?? "/run/secrets/db_user_password"
 
-    app.migrations.add(CreateTodo())
+  app.databases.use(.mysql(
+    hostname: Environment.get("DATABASE_HOST") ?? "db",
+    username: readSecret(from: dbUserFilePath) ?? "vapor",
+    password: readSecret(from: dbPasswordFilePath) ?? "password",
+    database: Environment.get("MYSQL_DATABASE") ?? "vapor_database",
+    tlsConfiguration: tls
+  ), as: .mysql)
 
-    app.views.use(.leaf)
+
+  app.migrations.add(CreateTodo())
+
+  try await app.autoMigrate().get()
+
+  app.views.use(.leaf)
 
 
-    // register routes
-    try routes(app)
+  // register routes
+  try routes(app)
 }

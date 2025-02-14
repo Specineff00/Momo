@@ -1,47 +1,79 @@
-# Docker Compose file for Vapor
-#
-# Install Docker on your system to run and test
-# your Vapor app in a production-like environment.
-#
-# Note: This file is intended for testing and does not
-# implement best practices for a production deployment.
-#
-# Learn more: https://docs.docker.com/compose/reference/
-#
-#   Build images: docker compose build
-#      Start app: docker compose up app
-#       Stop all: docker compose down
-#
 
-x-shared_environment: &shared_environment
-  LOG_LEVEL: ${LOG_LEVEL:-debug}
-  
+# When it comes to docker swarm, the services are deployed on different nodes.
+# Environment secrets are saved in the swarm manager node.
+# The app service will not be able to access the database service if they are not on the same node.
+# We need the swarm manager if we want environment secrets to be accessible by all services.
+# 
+
+# Define shared environment variables
+x-shared-environment: &shared-environment
+  MYSQL_DATABASE: momentum_database  # Set the database name here
+
 services:
   app:
-    image: momo:latest
-    build:
-      context: .
-    environment:
-      <<: *shared_environment
+    image: specineff00/momo-app:latest # Use the pushed image from Docker Hub
     ports:
-      - '8080:8080'
-    # user: '0' # uncomment to run as root for testing purposes even though Dockerfile defines 'vapor' user.
-    command: ["serve", "--env", "production", "--hostname", "0.0.0.0", "--port", "8080"]
-  migrate:
-    image: momo:latest
-    build:
-      context: .
+      - "8080:8080"  # Map the container port to the host port
     environment:
-      <<: *shared_environment
-    command: ["migrate", "--yes"]
-    deploy:
-      replicas: 0
-  revert:
-    image: momo:latest
-    build:
-      context: .
+      DATABASE_HOST: db
+      DATABASE_USER_FILE: /run/secrets/db_user  # Reference to the secret file
+      DATABASE_PASSWORD_FILE: /run/secrets/db_user_password  # Reference to the secret file
+      <<: *shared-environment
+    secrets:
+      - db_user
+      - db_user_password
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.0  # Official MySQL image
     environment:
-      <<: *shared_environment
-    command: ["migrate", "--revert", "--yes"]
-    deploy:
-      replicas: 0
+      MYSQL_ROOT_PASSWORD: /run/secrets/db_root_password
+      MYSQL_USER_FILE: /run/secrets/db_user
+      MYSQL_PASSWORD_FILE: /run/secrets/db_user_password
+      # MYSQL_ROOT_PASSWORD: Gimpeye810-
+      # MYSQL_USER: Temjin
+      # MYSQL_PASSWORD: Gimpeye810-
+      <<: *shared-environment
+      MYSQL_AUTHENTICATION_PLUGIN: mysql_native_password
+    command: --default-authentication-plugin=mysql_native_password 
+    ports:
+      - "3306:3306"
+    secrets:
+      - db_user
+      - db_user_password
+      - db_root_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+secrets:
+  db_user:
+    external: true  # Indicates that this secret is created outside of the compose file
+  db_user_password:
+    external: true  # Indicates that this secret is created outside of the compose file
+  db_root_password:
+    external: true  # Indicates that this secret is created outside of the compose file 
+
+volumes:
+  mysql_data:
+
+# Docker Swarm (Cluster)
+# ├── Node 1 (Manager)
+# │   ├── Service 1 (App Service)
+# │   │   ├── Container 1 (App Instance 1)
+# │   │   ├── Container 2 (App Instance 2)
+# │   │   └── ...
+# │   └── Service 2 (Database Service)
+# │       ├── Container 1 (MySQL Instance)
+# │       └── ...
+# ├── Node 2 (Worker)
+# │   ├── Service 1 (App Service)
+# │   │   ├── Container 3 (App Instance 3)
+# │   │   └── ...
+# │   └── Service 2 (Database Service)
+# │       └── ...
+# └── Node 3 (Worker)
+#     ├── Service 1 (App Service)
+#     │   └── ...
+#     └── Service 2 (Database Service)
+#         └── ...

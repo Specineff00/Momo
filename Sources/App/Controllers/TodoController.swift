@@ -12,10 +12,15 @@ struct TodoController: RouteCollection {
         }
     }
 
-    @Sendable
-    func index(req: Request) async throws -> [TodoDTO] {
-        try await Todo.query(on: req.db).all().map { $0.toDTO() }
-    }
+//    @Sendable
+//    func index(req: Request) async throws -> [TodoDTO] {
+//        try await Todo.query(on: req.db).all().map { $0.toDTO() }
+//    }
+
+  @Sendable
+  func index(req: Request) async throws -> [Todo] {
+      try await Todo.query(on: req.db).all()
+  }
 
     @Sendable
     func create(req: Request) async throws -> TodoDTO {
