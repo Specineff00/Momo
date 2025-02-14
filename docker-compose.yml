@@ -3,7 +3,8 @@
 # Environment secrets are saved in the swarm manager node.
 # The app service will not be able to access the database service if they are not on the same node.
 # We need the swarm manager if we want environment secrets to be accessible by all services.
-# 
+# The swarm needs the image rather than the build context. So the app needs to be pushed to Docker Hub and referenced by the username/repo:tag.
+# Remember that this file is not used in the swarm cluster, it is used to deploy the app and database services to the cluster.
 
 # Define shared environment variables
 x-shared-environment: &shared-environment
@@ -15,9 +16,9 @@ services:
     ports:
       - "8080:8080"  # Map the container port to the host port
     environment:
-      DATABASE_HOST: db
-      DATABASE_USER_FILE: /run/secrets/db_user  # Reference to the secret file
-      DATABASE_PASSWORD_FILE: /run/secrets/db_user_password  # Reference to the secret file
+      DATABASE_HOST: db # This is the service name referenced below 
+      DATABASE_USER_FILE: /run/secrets/db_user 
+      DATABASE_PASSWORD_FILE: /run/secrets/db_user_password 
       <<: *shared-environment
     secrets:
       - db_user
@@ -26,17 +27,12 @@ services:
       - db
 
   db:
-    image: mysql:8.0  # Official MySQL image
+    image: mysql:8.0  # Official MySQL image and therefore does not need to be pushed to Docker Hub
     environment:
       MYSQL_ROOT_PASSWORD: /run/secrets/db_root_password
       MYSQL_USER_FILE: /run/secrets/db_user
       MYSQL_PASSWORD_FILE: /run/secrets/db_user_password
-      # MYSQL_ROOT_PASSWORD: Gimpeye810-
-      # MYSQL_USER: Temjin
-      # MYSQL_PASSWORD: Gimpeye810-
       <<: *shared-environment
-      MYSQL_AUTHENTICATION_PLUGIN: mysql_native_password
-    command: --default-authentication-plugin=mysql_native_password 
     ports:
       - "3306:3306"
     secrets:
@@ -46,34 +42,18 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
 
+# This section is used to create the secrets.
+# The secrets are created outside of the compose file and are referenced by the file paths.
+# The secrets are created in the swarm manager node.
+# The secrets are used in the app and database services.
+# The secrets are not used in the swarm cluster, they are used to deploy the app and database services to the cluster.
 secrets:
   db_user:
     external: true  # Indicates that this secret is created outside of the compose file
   db_user_password:
-    external: true  # Indicates that this secret is created outside of the compose file
+    external: true 
   db_root_password:
-    external: true  # Indicates that this secret is created outside of the compose file 
+    external: true 
 
-volumes:
-  mysql_data:
-
-# Docker Swarm (Cluster)
-# ├── Node 1 (Manager)
-# │   ├── Service 1 (App Service)
-# │   │   ├── Container 1 (App Instance 1)
-# │   │   ├── Container 2 (App Instance 2)
-# │   │   └── ...
-# │   └── Service 2 (Database Service)
-# │       ├── Container 1 (MySQL Instance)
-# │       └── ...
-# ├── Node 2 (Worker)
-# │   ├── Service 1 (App Service)
-# │   │   ├── Container 3 (App Instance 3)
-# │   │   └── ...
-# │   └── Service 2 (Database Service)
-# │       └── ...
-# └── Node 3 (Worker)
-#     ├── Service 1 (App Service)
-#     │   └── ...
-#     └── Service 2 (Database Service)
-#         └── ...
+volumes: # This is used to persist the database data.
+  mysql_data: # This is the volume name.
