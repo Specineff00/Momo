@@ -15,3 +15,17 @@ struct CreateNote: Migration {
         database.schema("notes").delete()
     }
 }
+
+struct DropTodoTable: AsyncMigration {
+    func prepare(on database: Database) async throws {
+        try await database.schema("todos").delete()
+    }
+
+    func revert(on database: Database) async throws {
+        // If you need to revert, this would recreate the table
+        try await database.schema("todos")
+            .id()
+            .field("title", .string, .required)
+            .create()
+    }
+}

@@ -43,13 +43,12 @@ public func configure(_ app: Application) async throws {
     ), as: .mysql)
   }
 
-  app.migrations.add(CreateTodo())
   app.migrations.add(CreateNote())
-
+  app.migrations.add(DropTodoTable())
+  
   try await app.autoMigrate().get()
 
   app.views.use(.leaf)
-
 
   // register routes
   try routes(app)
