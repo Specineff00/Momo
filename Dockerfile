@@ -89,23 +89,30 @@
 # CMD ["serve", "--env", "production", "--hostname", "0.0.0.0", "--port", "8080"]
 
 # Build image
-FROM swift:5.9-jammy as build
+FROM swift:6.0-noble AS build
 
 WORKDIR /build
 
 # Copy entire repo into container
 COPY . .
 
-# Compile the application
-RUN swift build -c release
+# Compile and verify the build output
+RUN swift build -c release && \
+    echo "=== Listing .build/release directory ===" && \
+    ls -la .build/release && \
+    echo "=== Build complete ==="
 
 # Runtime image
-FROM swift:5.9-jammy-slim
+FROM swift:6.0-slim
 
 WORKDIR /run
 
-# Copy build artifacts
-COPY --from=build /build/.build/release /run
+# Copy build artifacts and verify the copy
+COPY --from=build /build/.build/release/App ./Run
+RUN echo "=== Listing /run directory ===" && \
+    ls -la /run && \
+    echo "=== Runtime directory contents shown ==="
+
 # Copy any resources from the public directory
 COPY --from=build /build/Public /run/Public
 

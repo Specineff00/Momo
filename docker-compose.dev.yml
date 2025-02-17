@@ -1,0 +1,42 @@
+# Define shared environment variables for development
+x-shared-environment: &shared-environment
+  MYSQL_DATABASE: momentum_database
+
+services:
+  app:
+    build: .  # This will use your local Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_HOST: db
+      DATABASE_USERNAME: devuser
+      DATABASE_PASSWORD: devpassword
+      <<: *shared-environment
+    depends_on:
+      db:
+        condition: service_healthy
+    # Optional: for live reload during development
+    volumes:
+      - .:/build
+    # Optional: override the production command if needed
+    command: ["serve", "--env", "development", "--hostname", "0.0.0.0", "--port", "8080"]
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_USER: devuser
+      MYSQL_PASSWORD: devpassword
+      <<: *shared-environment
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_dev_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mysql_dev_data:  # Local development database volume
