@@ -29,10 +29,9 @@ public func configure(_ app: Application) async throws {
       tlsConfiguration: tls
     ), as: .mysql)
   } else {
-
-      // Access the environment variables for the secret file paths
-  let dbUserFilePath = Environment.get("DATABASE_USER_FILE") ?? "/run/secrets/db_user"
-  let dbPasswordFilePath = Environment.get("DATABASE_PASSWORD_FILE") ?? "/run/secrets/db_user_password"
+    // Access the environment variables for the secret file paths
+    let dbUserFilePath = Environment.get("DATABASE_USER_FILE") ?? "/run/secrets/db_user"
+    let dbPasswordFilePath = Environment.get("DATABASE_PASSWORD_FILE") ?? "/run/secrets/db_user_password"
 
     app.databases.use(.mysql(
       hostname: Environment.get("DATABASE_HOST") ?? "db",
@@ -45,10 +44,9 @@ public func configure(_ app: Application) async throws {
 
   app.migrations.add(CreateNote())
   app.migrations.add(DropTodoTable())
-  
-  try await app.autoMigrate().get()
+  app.migrations.add(CreateQuotes())
 
-  app.views.use(.leaf)
+  try await app.autoMigrate().get()
 
   // register routes
   try routes(app)
