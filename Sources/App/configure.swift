@@ -1,7 +1,6 @@
 import NIOSSL
 import Fluent
 import FluentMySQLDriver
-import Leaf
 import Vapor
 
 func readSecret(from path: String) -> String? {
@@ -43,7 +42,6 @@ public func configure(_ app: Application) async throws {
   }
 
   app.migrations.add(CreateNote())
-  app.migrations.add(DropTodoTable())
   app.migrations.add(CreateQuotes())
 
   try await app.autoMigrate().get()

@@ -6,7 +6,7 @@ services:
   app:
     build: .  # This will use your local Dockerfile
     ports:
-      - "8080:8080"
+      - "8081:8081"
     environment:
       DATABASE_HOST: db
       DATABASE_USERNAME: devuser
@@ -18,8 +18,8 @@ services:
     # Optional: for live reload during development
     volumes:
       - .:/build
-    # Optional: override the production command if needed
-    command: ["serve", "--env", "development", "--hostname", "0.0.0.0", "--port", "8080"]
+    # The port is set here for the vapor app to listen on. If its different to the container port (8081:8081) then the app will listen on the wrong port.
+    command: ["serve", "--env", "development", "--hostname", "0.0.0.0", "--port", "8081"]
 
   db:
     image: mysql:8.0
@@ -29,7 +29,7 @@ services:
       MYSQL_PASSWORD: devpassword
       <<: *shared-environment
     ports:
-      - "3306:3306"
+      - "3307:3307"
     volumes:
       - mysql_dev_data:/var/lib/mysql
     healthcheck:
