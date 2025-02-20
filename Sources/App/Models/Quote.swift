@@ -30,3 +30,7 @@ final class Quote: Model, Content, @unchecked Sendable {
         self.category = category
     }
 }
+
+extension Quote: Findable {
+  static var modelName: String { String(describing: self) }
+}

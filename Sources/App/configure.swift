@@ -25,7 +25,8 @@ public func configure(_ app: Application) async throws {
       username: Environment.get("DATABASE_USERNAME") ?? "devuser",
       password: Environment.get("DATABASE_PASSWORD") ?? "devpassword",
       database: Environment.get("MYSQL_DATABASE") ?? "momentum_database",
-      tlsConfiguration: tls
+      tlsConfiguration: tls,
+      maxConnectionsPerEventLoop: 5
     ), as: .mysql)
   } else {
     // Access the environment variables for the secret file paths
@@ -37,7 +38,8 @@ public func configure(_ app: Application) async throws {
       username: readSecret(from: dbUserFilePath) ?? "vapor",
       password: readSecret(from: dbPasswordFilePath) ?? "password",
       database: Environment.get("MYSQL_DATABASE") ?? "vapor_database",
-      tlsConfiguration: tls
+      tlsConfiguration: tls,
+      maxConnectionsPerEventLoop: 5
     ), as: .mysql)
   }
 

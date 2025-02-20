@@ -37,3 +37,7 @@ final class Note: Model, Content, @unchecked Sendable {
     self.priority = priority
   }
 }
+
+extension Note: Findable {
+  static var modelName: String { String(describing: self) }
+}
