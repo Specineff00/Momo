@@ -19,10 +19,10 @@ final class Quote: Model, Content, @unchecked Sendable {
     init() {}
 
     init(
-      id: UUID? = nil,
-      text: String,
-      author: String? = nil,
-      category: String = "Inspiration"
+        id: UUID? = nil,
+        text: String,
+        author: String? = nil,
+        category: String = "Inspiration"
     ) {
         self.id = id
         self.text = text
@@ -32,5 +32,5 @@ final class Quote: Model, Content, @unchecked Sendable {
 }
 
 extension Quote: Findable {
-  static var modelName: String { String(describing: self) }
+    static var modelName: String { String(describing: self) }
 }

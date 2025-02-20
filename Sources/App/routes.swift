@@ -2,6 +2,6 @@ import Fluent
 import Vapor
 
 func routes(_ app: Application) throws {
-  try app.register(collection: NoteController())
-  try app.register(collection: QuoteController())
+    try app.register(collection: NoteController())
+    try app.register(collection: QuoteController())
 }
